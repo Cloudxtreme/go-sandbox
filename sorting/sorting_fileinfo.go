@@ -2,7 +2,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -37,9 +36,9 @@ func main() {
 	var arg string
 
 	// -fオプション flag.Arg(0)だとファイル名が展開されてしまうようなので
-	flag.StringVar(&arg, "f", "", "SearchPattern")
+	// flag.StringVar(&arg, "f", "", "SearchPattern")
 	// コマンドライン引数を解析
-	flag.Parse()
+	// flag.Parse()
 
 	// カレントディレクトリの取得
 	var curDir, _ = os.Getwd()
@@ -81,6 +80,7 @@ func main() {
 	for _, fileInfo := range fileInfos {
 		// *FileInfo型
 		var findName = (fileInfo).Name()
+		var findTime = (fileInfo).ModTime().Unix()
 		var matched = true
 		// lsのようなワイルドカード検索を行うため、path.Matchを呼び出す
 		if filePattern != "" {
@@ -89,6 +89,7 @@ func main() {
 		// path.Matchでマッチした場合、ファイル名を表示
 		if matched == true {
 			fmt.Printf("%s\n", findName)
+			fmt.Println(findTime)
 		}
 	}
 }
