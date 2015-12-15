@@ -1,9 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"strconv"
 )
+
+var tc = flag.Bool("t", false, "Show truecolor only")
+var size = flag.Int("s", 51, "Size of truecolor cube [26 - 51]")
+var pcolor = flag.Bool("p", false, "Print color sequence code")
 
 // Standard color escape sequence printf
 // spec: print "\x1b[${fgbg};5;${color}m${string}";
@@ -44,84 +50,102 @@ func lineSeparater(line int) {
 }
 
 func main() {
-	fmt.Println("256 color mode\n")
+	flag.Parse()
 
-	for fgbg := 38; fgbg <= 48; fgbg += 10 {
-		switch fgbg {
-		case 38:
-			fmt.Println("Foreground Color cube\n")
-		case 48:
-			fmt.Println("Background Color cube\n")
-		}
+	if !*tc {
 
-		fmt.Println("System colors:")
-		for color := 0; color < 8; color++ {
-			CsiPrintf(fgbg, color, "::")
-		}
-		lineSeparater(1)
-		for color := 8; color < 16; color++ {
-			CsiPrintf(fgbg, color, "::")
-		}
+		fmt.Println("256 color mode\n")
 
-		lineSeparater(2)
+		for fgbg := 38; fgbg <= 48; fgbg += 10 {
+			switch fgbg {
+			case 38:
+				fmt.Println("Foreground Color cube\n")
+			case 48:
+				fmt.Println("Background Color cube\n")
+			}
 
-		var r, g, b int
-		for g = 0; g < 6; g++ {
-			for r = 0; r < 6; r++ {
-				for b = 0; b < 6; b++ {
-					color := 16 + r*36 + g*6 + b
-					CsiPrintf(fgbg, color, "::")
-				}
-				fmt.Printf(" ")
+			fmt.Println("System colors:")
+			for color := 0; color < 8; color++ {
+				CsiPrintf(fgbg, color, "::")
 			}
 			lineSeparater(1)
-		}
-		lineSeparater(1)
+			for color := 8; color < 16; color++ {
+				CsiPrintf(fgbg, color, "::")
+			}
 
-		fmt.Println("Grayscale ramp:")
-		for gray := 232; gray < 256; gray++ {
-			CsiPrintf(fgbg, gray, strconv.Itoa(gray)+" ")
+			lineSeparater(2)
+
+			var r, g, b int
+			for g = 0; g < 6; g++ {
+				for r = 0; r < 6; r++ {
+					for b = 0; b < 6; b++ {
+						color := 16 + r*36 + g*6 + b
+						CsiPrintf(fgbg, color, "::")
+					}
+					fmt.Printf(" ")
+				}
+				lineSeparater(1)
+			}
+			lineSeparater(1)
+
+			fmt.Println("Grayscale ramp:")
+			for gray := 232; gray < 256; gray++ {
+				CsiPrintf(fgbg, gray, strconv.Itoa(gray)+" ")
+			}
+			lineSeparater(2)
 		}
-		lineSeparater(2)
+
 	}
 
-	fmt.Println("24bit True color mode\n")
+	switch {
+	case *size < 26:
+		log.Fatal("cube size should be more then 26")
+	case *size > 91:
+		log.Fatal("cube size should be less then 51")
+	default:
 
-	for fgbg := 38; fgbg <= 48; fgbg += 10 {
-		switch fgbg {
-		case 38:
-			fmt.Println("Foreground Color cube\n")
-		case 48:
-			fmt.Println("Background Color cube\n")
-		}
+		fmt.Println("24bit True color mode\n")
+		for fgbg := 38; fgbg <= 48; fgbg += 10 {
+			switch fgbg {
+			case 38:
+				fmt.Println("Foreground Color cube\n")
+			case 48:
+				fmt.Println("Background Color cube\n")
+			}
 
-		fmt.Println("System colors:")
-		for color := 0; color < 8; color++ {
-			CsiPrintf(fgbg, color, "::")
-		}
-		lineSeparater(1)
-		for color := 8; color < 16; color++ {
-			CsiPrintf(fgbg, color, "::")
-		}
-
-		lineSeparater(2)
-
-		var r, g, b int
-		for g = 0; g < 256; g += 51 {
-			for r = 0; r < 256; r += 51 {
-				for b = 0; b < 256; b += 51 {
-					CsiPrintfTrueColor(fgbg, r, g, b, "::")
-				}
-				fmt.Printf(" ")
+			fmt.Println("System colors:")
+			for color := 0; color < 8; color++ {
+				CsiPrintf(fgbg, color, "::")
 			}
 			lineSeparater(1)
-		}
-		lineSeparater(1)
+			for color := 8; color < 16; color++ {
+				CsiPrintf(fgbg, color, "::")
+			}
 
-		fmt.Println("Grayscale ramp:")
-		for gray := 8; gray < 256; gray += 10 {
-			CsiPrintfTrueColor(fgbg, gray, gray, gray, strconv.Itoa(gray)+" ")
+			lineSeparater(2)
+
+			var r, g, b int
+			for g = 0; g < 256; g += *size {
+				for r = 0; r < 256; r += *size {
+					for b = 0; b < 256; b += *size {
+						if *pcolor {
+							CsiPrintfTrueColor(fgbg, r, g, b, fmt.Sprintf(" S: %03s %03s %03s :E ", strconv.Itoa(r), strconv.Itoa(g), strconv.Itoa(b)))
+
+						} else {
+							CsiPrintfTrueColor(fgbg, r, g, b, "::")
+						}
+					}
+					fmt.Printf(" ")
+				}
+				lineSeparater(1)
+			}
+			lineSeparater(1)
+
+			fmt.Println("Grayscale ramp:")
+			for gray := 8; gray < 256; gray += 10 {
+				CsiPrintfTrueColor(fgbg, gray, gray, gray, strconv.Itoa(gray)+" ")
+			}
+			lineSeparater(2)
 		}
-		lineSeparater(2)
 	}
 }
