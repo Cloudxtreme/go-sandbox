@@ -7,9 +7,14 @@ import (
 	"strconv"
 )
 
-var tc = flag.Bool("t", false, "Show truecolor only")
-var size = flag.Int("s", 51, "Size of truecolor cube [26 - 51]")
-var pcolor = flag.Bool("p", false, "Print color sequence code")
+var (
+	tc     = flag.Bool("t", false, "Show truecolor only")
+	size   = flag.Int("s", 51, "Size of truecolor cube [26 - 51]")
+	pcolor = flag.Bool("p", false, "Print RGB color code")
+	code   = flag.Bool("c", false, "With 256 code")
+	list   = flag.Bool("l", false, "Print list style")
+	str    = flag.String("str", "", "Print string")
+)
 
 // Standard color escape sequence printf
 // spec: print "\x1b[${fgbg};5;${color}m${string}";
@@ -80,7 +85,11 @@ func main() {
 				for r = 0; r < 6; r++ {
 					for b = 0; b < 6; b++ {
 						color := 16 + r*36 + g*6 + b
-						CsiPrintf(fgbg, color, "::")
+						if *pcolor {
+							CsiPrintf(fgbg, color, fmt.Sprintf("%03s", strconv.Itoa(color)))
+						} else {
+							CsiPrintf(fgbg, color, "::")
+						}
 					}
 					fmt.Printf(" ")
 				}
@@ -124,18 +133,29 @@ func main() {
 
 			lineSeparater(2)
 
-			var r, g, b int
-			for g = 0; g < 256; g += *size {
-				for r = 0; r < 256; r += *size {
-					for b = 0; b < 256; b += *size {
+			var r, g, b, gi, ri, bi int
+			for g, gi = 0, 0; g < 256; g += *size {
+				gi++
+				for r, ri = 0, 0; r < 256; r += *size {
+					ri++
+					for b, bi = 0, 0; b < 256; b += *size {
+						bi++
 						if *pcolor {
+							color := 16 + ri*36 + gi*6 + bi - 43
+							fmt.Printf("%d :", color)
 							CsiPrintfTrueColor(fgbg, r, g, b, fmt.Sprintf(" S: %03s %03s %03s :E ", strconv.Itoa(r), strconv.Itoa(g), strconv.Itoa(b)))
-
+							fmt.Printf("\n")
+						} else if *str != "" {
+							CsiPrintfTrueColor(fgbg, r, g, b, *str)
+							fmt.Printf("\n")
 						} else {
 							CsiPrintfTrueColor(fgbg, r, g, b, "::")
 						}
+						if *list {
+							fmt.Printf("\n")
+						}
 					}
-					fmt.Printf(" ")
+					// fmt.Printf(" ")
 				}
 				lineSeparater(1)
 			}

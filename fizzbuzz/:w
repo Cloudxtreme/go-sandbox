@@ -1,0 +1,2 @@
+eval "$( command rbenv init - )"
+/usr/local/bin/rbenv "$@"
